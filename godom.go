@@ -2,8 +2,22 @@ package godom
 
 import (
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"net/url"
+	"os"
+	"os/exec"
 	"regexp"
 	"strings"
+
+	"github.com/GuNanHai/toolkit"
+)
+
+const (
+	// UserAgent :
+	UserAgent = "User-Agent"
+	// Proxy :
+	PROXY = "PROXY"
 )
 
 // Parser : page string --->  Element
@@ -307,4 +321,91 @@ func (e Element) Attr(attr string) string {
 		}
 	}
 	return ""
+}
+
+// Fetch ： 访问网页
+func Fetch(link string, arg ...*http.Cookie) Element {
+	proxy := RandomProxy()
+	if len(arg) > 0 {
+		for _, c := range arg {
+			if c.Name == PROXY {
+				proxy = c.Value
+			}
+		}
+	}
+	proxyURL, err := url.Parse(proxy)
+	myClient := &http.Client{Transport: &http.Transport{Proxy: http.ProxyURL(proxyURL)}}
+
+	req, err := http.NewRequest("GET", link, nil)
+	if err != nil {
+		fmt.Println(link, "-- Request 创建失败 ： ", err)
+		os.Exit(1)
+	}
+
+	req.Header = RandomUserAgent()
+	if len(arg) > 0 {
+		for _, c := range arg {
+			if c.Name == UserAgent {
+				req.Header = map[string][]string{
+					"User-Agent": {c.Value},
+				}
+				continue
+			}
+
+			if c.Name == PROXY {
+				continue
+			}
+
+			req.AddCookie(c)
+		}
+	}
+
+	resp, err2 := myClient.Do(req)
+	if err2 != nil {
+		fmt.Println(link, "  访问失败 : ", err2)
+		defer resp.Body.Close()
+		return Fetch(link, arg...)
+	}
+
+	body, err3 := ioutil.ReadAll(resp.Body)
+	if err3 != nil {
+		fmt.Println(link, "  网页编码转译失败", err3)
+		os.Exit(1)
+	}
+
+	var e Element
+	e.Raw = string(body)
+
+	return e
+}
+
+// HandleCfIUAM : 执行处理Cloudflare  的反爬虫机制-IUAM  的Python脚本
+// 返回CookieList  形式类似  {属性名，属性值，属性名，属性值}
+// 返回outputList[1] 即为  User-Agent
+func HandleCfIUAM(url string) []*http.Cookie {
+	userAgent := RandomUserAgentS()
+	proxy := RandomProxy()
+	re := regexp.MustCompile(`'.*?'`)
+	cwd, err := os.Getwd()
+	toolkit.CheckErr(err)
+	appName := cwd + "/" + "handleCF_IUAM.py"
+
+	fmt.Println(userAgent)
+	fmt.Println("==========================userAgent")
+	fmt.Println(proxy)
+	fmt.Println("==========================PROXY")
+
+	cmd := exec.Command("python3", appName, url, userAgent, proxy)
+	out, err2 := cmd.Output()
+	toolkit.CheckErr(err2)
+	cookieList := re.FindAllString(string(out), -1)
+
+	fmt.Println(cookieList)
+	fmt.Println("===================cookielist")
+	cookie1 := http.Cookie{Name: cookieList[0], Value: cookieList[1]}
+	cookie2 := http.Cookie{Name: cookieList[2], Value: cookieList[3]}
+	cookie3 := http.Cookie{Name: UserAgent, Value: userAgent}
+	cookie4 := http.Cookie{Name: PROXY, Value: proxy}
+
+	return []*http.Cookie{&cookie1, &cookie2, &cookie3, &cookie4}
 }
