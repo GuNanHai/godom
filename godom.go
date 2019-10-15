@@ -344,6 +344,8 @@ func Fetch(link string, arg ...*http.Cookie) Element {
 		os.Exit(1)
 	}
 
+	fmt.Println("header After", req.Header)
+
 	req.Header = RandomUserAgent()
 	if len(arg) > 0 {
 		for _, c := range arg {
@@ -362,6 +364,9 @@ func Fetch(link string, arg ...*http.Cookie) Element {
 		}
 	}
 
+	fmt.Println(proxy)
+	fmt.Println(arg)
+	fmt.Println("header before", req.Header)
 	resp, err2 := myClient.Do(req)
 	if resp == nil {
 		fmt.Println(link, " --  Error: \n", err2)
@@ -430,7 +435,9 @@ func HandleCfIUAM(link string) []*http.Cookie {
 		return HandleCfIUAM(link)
 	}
 
+	fmt.Println(proxy)
 	fmt.Println(cookieList)
+	fmt.Println(UserAgent)
 	fmt.Println("===================cookielist")
 	cookie1 := http.Cookie{Name: cookieList[0], Value: cookieList[1]}
 	cookie2 := http.Cookie{Name: cookieList[2], Value: cookieList[3]}
