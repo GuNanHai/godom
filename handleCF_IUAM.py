@@ -7,14 +7,10 @@ import requests
 
 url = sys.argv[1]
 userAgent = sys.argv[2]
+proxy = sys.argv[3]
 
-proxies = {}
-if len(sys.argv) == 4:
-  proxy = sys.argv[3]
-  protocol = proxy.split(":")[0]
-  proxies = {protocol:proxy}
-
-
+protocol = proxy.split(":")[0]
+proxies = {protocol:proxy}
 headers = {
   "User-Agent":userAgent
 }

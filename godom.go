@@ -365,6 +365,7 @@ func Fetch(link string, arg ...*http.Cookie) Element {
 	if err2 != nil {
 		fmt.Println(link, "  访问失败 : ", err2)
 		defer resp.Body.Close()
+		time.Sleep(time.Second)
 		return Fetch(link, arg...)
 	}
 
@@ -384,20 +385,12 @@ func Fetch(link string, arg ...*http.Cookie) Element {
 // 返回CookieList  形式类似  {属性名，属性值，属性名，属性值}
 // 返回outputList[1] 即为  User-Agent
 func HandleCfIUAM(link string) []*http.Cookie {
+	appName := toolkit.GetPkgPath("godom") + "/" + "handleCF_IUAM.py"
 	userAgent := RandomUserAgentS()
 	proxy := RandomProxy()
 	re := regexp.MustCompile(`'.*?'`)
-	cwd, err := os.Getwd()
-	toolkit.CheckErr(err)
-	appName := cwd + "/" + "handleCF_IUAM.py"
-
-	fmt.Println(userAgent)
-	fmt.Println("==========================userAgent")
-	fmt.Println(proxy)
-	fmt.Println("==========================PROXY")
 
 	cmd := exec.Command("python3", appName, link, userAgent, proxy)
-	time.After(3 * time.Second)
 
 	out, err2 := cmd.Output()
 	fmt.Println(out)
@@ -406,7 +399,8 @@ func HandleCfIUAM(link string) []*http.Cookie {
 
 	cookieList := re.FindAllString(string(out), -1)
 	if len(cookieList) < 2 {
-		fmt.Println("失败！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！")
+		fmt.Println(link, "-->访问失败  Proxy:", proxy)
+		time.Sleep(time.Second)
 		return HandleCfIUAM(link)
 	}
 
