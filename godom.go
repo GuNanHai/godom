@@ -399,6 +399,16 @@ func Fetch(link string, arg ...*http.Cookie) Element {
 	return e
 }
 
+//FetchIUAM : 针对带有CloudFlare 的人类检查的网站
+func FetchIUAM(link string) Element {
+	for {
+		page := Fetch(link, HandleCfIUAM(link)...)
+		if len(page.Raw) > 0 {
+			return page
+		}
+	}
+}
+
 // HandleCfIUAM : 执行处理Cloudflare  的反爬虫机制-IUAM  的Python脚本
 // 返回CookieList  形式类似  {属性名，属性值，属性名，属性值}
 // 返回outputList[1] 即为  User-Agent
