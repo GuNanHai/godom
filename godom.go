@@ -367,6 +367,10 @@ func Fetch(link string, arg ...*http.Cookie) Element {
 		fmt.Println(link, " --  Error: \n", err2)
 		fmt.Println("_____________________________")
 		time.Sleep(time.Second)
+
+		if len(arg) > 0 {
+			return Element{}
+		}
 		return Fetch(link, arg...)
 
 	}
@@ -374,6 +378,10 @@ func Fetch(link string, arg ...*http.Cookie) Element {
 		fmt.Println(link, " -- ", resp.StatusCode, "  Error: \n", err2)
 		fmt.Println("_____________________________")
 		time.Sleep(time.Second)
+
+		if len(arg) > 0 {
+			return Element{}
+		}
 		return Fetch(link, arg...)
 	}
 	defer resp.Body.Close()
