@@ -9,19 +9,19 @@ import (
 // RandomUserAgent : 随机返回一个浏览器的用户标识   (http.Header)
 func RandomUserAgent() http.Header {
 	rand.Seed(time.Now().UnixNano())
-	userAgent := userAgentList[rand.Intn(len(userAgentList))]
+	uAgent := userAgentList[rand.Intn(len(userAgentList))]
 
 	return map[string][]string{
-		"User-Agent": {userAgent},
+		"User-Agent": {uAgent},
 	}
 }
 
 // RandomUserAgentS : 随机返回一个浏览器的用户标识  (字符串)
 func RandomUserAgentS() string {
 	rand.Seed(time.Now().UnixNano())
-	userAgent := userAgentList[rand.Intn(len(userAgentList))]
+	uAgent := userAgentList[rand.Intn(len(userAgentList))]
 
-	return userAgent
+	return uAgent
 }
 
 var userAgentList = []string{`Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.101 Safari/537.36`,

@@ -15,8 +15,8 @@ import (
 )
 
 const (
-	// UserAgent :
-	UserAgent = "User-Agent"
+	// USERAGENT :
+	USERAGENT = "User-Agent"
 	// PROXY :
 	PROXY = "PROXY"
 )
@@ -349,7 +349,7 @@ func Fetch(link string, arg ...*http.Cookie) Element {
 	req.Header = RandomUserAgent()
 	if len(arg) > 0 {
 		for _, c := range arg {
-			if c.Name == UserAgent {
+			if c.Name == USERAGENT {
 				req.Header = map[string][]string{
 					"User-Agent": {c.Value},
 				}
@@ -419,11 +419,11 @@ func FetchIUAM(link string) Element {
 // 返回outputList[1] 即为  User-Agent
 func HandleCfIUAM(link string) []*http.Cookie {
 	appName := toolkit.GetPkgPath("godom") + "/" + "handleCF_IUAM.py"
-	userAgent := RandomUserAgentS()
+	uAgent := RandomUserAgentS()
 	proxy := RandomProxy()
 	re := regexp.MustCompile(`'.*?'`)
 
-	cmd := exec.Command("python3", appName, link, userAgent, proxy)
+	cmd := exec.Command("python3", appName, link, uAgent, proxy)
 
 	out, err2 := cmd.Output()
 	toolkit.CheckErr(err2)
@@ -437,11 +437,11 @@ func HandleCfIUAM(link string) []*http.Cookie {
 
 	fmt.Println(proxy)
 	fmt.Println(cookieList)
-	fmt.Println(UserAgent)
+	fmt.Println(uAgent)
 	fmt.Println("===================cookielist")
 	cookie1 := http.Cookie{Name: cookieList[0], Value: cookieList[1]}
 	cookie2 := http.Cookie{Name: cookieList[2], Value: cookieList[3]}
-	cookie3 := http.Cookie{Name: UserAgent, Value: userAgent}
+	cookie3 := http.Cookie{Name: USERAGENT, Value: uAgent}
 	cookie4 := http.Cookie{Name: PROXY, Value: proxy}
 
 	return []*http.Cookie{&cookie1, &cookie2, &cookie3, &cookie4}
