@@ -364,10 +364,10 @@ func Fetch(link string, arg ...*http.Cookie) Element {
 	resp, err2 := myClient.Do(req)
 	if err2 != nil {
 		fmt.Println(link, "  访问失败 : ", err2)
-		defer resp.Body.Close()
 		time.Sleep(time.Second)
 		return Fetch(link, arg...)
 	}
+	defer resp.Body.Close()
 
 	body, err3 := ioutil.ReadAll(resp.Body)
 	if err3 != nil {
@@ -393,8 +393,6 @@ func HandleCfIUAM(link string) []*http.Cookie {
 	cmd := exec.Command("python3", appName, link, userAgent, proxy)
 
 	out, err2 := cmd.Output()
-	fmt.Println(out)
-	fmt.Println("=================================OUT")
 	toolkit.CheckErr(err2)
 
 	cookieList := re.FindAllString(string(out), -1)
