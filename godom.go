@@ -344,7 +344,7 @@ func Fetch(link string, arg ...*http.Cookie) Element {
 		os.Exit(1)
 	}
 
-	fmt.Println("header After", req.Header)
+	fmt.Println("header before", req.Header)
 
 	req.Header = RandomUserAgent()
 	if len(arg) > 0 {
@@ -366,7 +366,7 @@ func Fetch(link string, arg ...*http.Cookie) Element {
 
 	fmt.Println(proxy)
 	fmt.Println(arg)
-	fmt.Println("header before", req.Header)
+	fmt.Println("header After", req.Header)
 	resp, err2 := myClient.Do(req)
 	if resp == nil {
 		fmt.Println(link, " --  Error: \n", err2)
