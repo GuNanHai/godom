@@ -334,8 +334,9 @@ func Fetch(link string, arg ...*http.Cookie) Element {
 			}
 		}
 	}
+
 	proxyURL, err := url.Parse(proxy)
-	myClient := &http.Client{Transport: &http.Transport{Proxy: http.ProxyURL(proxyURL)}}
+	myClient := &http.Client{Timeout: time.Second * 7, Transport: &http.Transport{Proxy: http.ProxyURL(proxyURL)}}
 
 	req, err := http.NewRequest("GET", link, nil)
 	if err != nil {
@@ -362,8 +363,16 @@ func Fetch(link string, arg ...*http.Cookie) Element {
 	}
 
 	resp, err2 := myClient.Do(req)
-	if err2 != nil {
-		fmt.Println(link, "  访问失败 : ", err2)
+	if resp == nil {
+		fmt.Println(link, " --  Error: \n", err2)
+		fmt.Println("_____________________________")
+		time.Sleep(time.Second)
+		return Fetch(link, arg...)
+
+	}
+	if resp.StatusCode != 200 || err2 != nil {
+		fmt.Println(link, " -- ", resp.StatusCode, "  Error: \n", err2)
+		fmt.Println("_____________________________")
 		time.Sleep(time.Second)
 		return Fetch(link, arg...)
 	}
@@ -372,6 +381,7 @@ func Fetch(link string, arg ...*http.Cookie) Element {
 	body, err3 := ioutil.ReadAll(resp.Body)
 	if err3 != nil {
 		fmt.Println(link, "  网页编码转译失败", err3)
+		fmt.Println("_____________________________")
 		os.Exit(1)
 	}
 
