@@ -344,15 +344,13 @@ func Fetch(link string, arg ...*http.Cookie) Element {
 		os.Exit(1)
 	}
 
+	req.Header.Set(USERAGENT, RandomUserAgentS())
 	fmt.Println("header before", req.Header)
 
-	req.Header = RandomUserAgent()
 	if len(arg) > 0 {
 		for _, c := range arg {
 			if c.Name == USERAGENT {
-				req.Header = map[string][]string{
-					"User-Agent": {c.Value},
-				}
+				req.Header.Set(USERAGENT, c.Value)
 				continue
 			}
 
