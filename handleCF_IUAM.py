@@ -15,8 +15,16 @@ if len(sys.argv) == 4:
   proxies = {protocol:proxy}
 
 
+headers = {
+  "User-Agent":userAgent
+}
 
-tokens = cfscrape.get_tokens(url,proxies=proxies,user_agent=userAgent)
+
+tokens = cfscrape.get_tokens(url,proxies=proxies,user_agent=userAgent,timeout=5)
 print(tokens[0])
+
+
+
+
 
 
