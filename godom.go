@@ -5,8 +5,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"os"
-	"os/exec"
 	"regexp"
 	"strings"
 	"time"
@@ -327,120 +325,48 @@ func (e Element) Attr(attr string) string {
 // Fetch ： 访问网页
 func Fetch(link string, arg ...*http.Cookie) Element {
 	proxy := RandomProxy()
-	if len(arg) > 0 {
-		for _, c := range arg {
-			if c.Name == PROXY {
-				proxy = c.Value
-			}
-		}
-	}
-
 	proxyURL, err := url.Parse(proxy)
-	myClient := &http.Client{Timeout: time.Second * 7, Transport: &http.Transport{Proxy: http.ProxyURL(proxyURL)}}
+	toolkit.CheckErr(err)
 
-	req, err := http.NewRequest("GET", link, nil)
-	if err != nil {
-		fmt.Println(link, "-- Request 创建失败 ： ", err)
-		os.Exit(1)
+	url, err2 := url.Parse(link)
+	toolkit.CheckErr(err2)
+
+	transport := &http.Transport{
+		Proxy: http.ProxyURL(proxyURL),
 	}
+
+	myClient := &http.Client{Timeout: 5 * time.Second, Transport: transport}
+
+	req, err3 := http.NewRequest("GET", url.String(), nil)
+	toolkit.CheckErr(err3)
 
 	req.Header.Set(USERAGENT, RandomUserAgentS())
-	fmt.Println("header before", req.Header)
 
-	if len(arg) > 0 {
-		for _, c := range arg {
-			if c.Name == USERAGENT {
-				req.Header.Set(USERAGENT, c.Value)
-				continue
-			}
-
-			if c.Name == PROXY {
-				continue
-			}
-
-			req.AddCookie(c)
-		}
-	}
-
-	fmt.Println(proxy)
-	fmt.Println(arg)
-	fmt.Println("header After", req.Header)
-	resp, err2 := myClient.Do(req)
+	resp, err4 := myClient.Do(req)
 	if resp == nil {
-		fmt.Println(link, " --  Error: \n", err2)
-		fmt.Println("_____________________________")
-		time.Sleep(time.Second)
+		// fmt.Println(link, " --  Error: \n", err4)
+		// fmt.Println("---------------------------------")
 
-		if len(arg) > 0 {
-			return Element{}
-		}
-		return Fetch(link, arg...)
-
-	}
-	if resp.StatusCode != 200 || err2 != nil {
-		fmt.Println(link, " -- ", resp.StatusCode, "  Error: \n", err2)
-		fmt.Println("_____________________________")
-		time.Sleep(time.Second)
-
-		if len(arg) > 0 {
-			return Element{}
-		}
 		return Fetch(link, arg...)
 	}
-	defer resp.Body.Close()
+	if resp.StatusCode != 200 || err4 != nil {
+		// fmt.Println(link, " -- ", resp.StatusCode, "  Error: \n", err2)
+		// fmt.Println("---------------------------------")
+
+		return Fetch(link, arg...)
+	}
 
 	body, err3 := ioutil.ReadAll(resp.Body)
 	if err3 != nil {
-		fmt.Println(link, "  网页编码转译失败", err3)
-		fmt.Println("_____________________________")
-		os.Exit(1)
+		// fmt.Println(link, "  网页编码转译失败", err3)
+		// fmt.Println("---------------------------------")
+		return Fetch(link, arg...)
 	}
+
+	defer resp.Body.Close()
 
 	var e Element
 	e.Raw = string(body)
 
 	return e
-}
-
-//FetchIUAM : 针对带有CloudFlare 的人类检查的网站
-func FetchIUAM(link string) Element {
-	for {
-		page := Fetch(link, HandleCfIUAM(link)...)
-		if len(page.Raw) > 0 {
-			return page
-		}
-	}
-}
-
-// HandleCfIUAM : 执行处理Cloudflare  的反爬虫机制-IUAM  的Python脚本
-// 返回CookieList  形式类似  {属性名，属性值，属性名，属性值}
-// 返回outputList[1] 即为  User-Agent
-func HandleCfIUAM(link string) []*http.Cookie {
-	appName := toolkit.GetPkgPath("godom") + "/" + "handleCF_IUAM.py"
-	uAgent := RandomUserAgentS()
-	proxy := RandomProxy()
-	re := regexp.MustCompile(`'.*?'`)
-
-	cmd := exec.Command("python3", appName, link, uAgent, proxy)
-
-	out, err2 := cmd.Output()
-	toolkit.CheckErr(err2)
-
-	cookieList := re.FindAllString(string(out), -1)
-	if len(cookieList) < 2 {
-		fmt.Println(link, "-->访问失败  Proxy:", proxy)
-		time.Sleep(time.Second)
-		return HandleCfIUAM(link)
-	}
-
-	fmt.Println(proxy)
-	fmt.Println(cookieList)
-	fmt.Println(uAgent)
-	fmt.Println("===================cookielist")
-	cookie1 := http.Cookie{Name: cookieList[0], Value: cookieList[1]}
-	cookie2 := http.Cookie{Name: cookieList[2], Value: cookieList[3]}
-	cookie3 := http.Cookie{Name: USERAGENT, Value: uAgent}
-	cookie4 := http.Cookie{Name: PROXY, Value: proxy}
-
-	return []*http.Cookie{&cookie1, &cookie2, &cookie3, &cookie4}
 }
