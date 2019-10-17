@@ -323,7 +323,7 @@ func (e Element) Attr(attr string) string {
 }
 
 // Fetch ： 访问网页
-func Fetch(link string, arg ...*http.Cookie) Element {
+func Fetch(link string, timeout int, arg ...*http.Cookie) Element {
 	proxy := RandomProxy()
 	proxyURL, err := url.Parse(proxy)
 	toolkit.CheckErr(err)
@@ -335,7 +335,7 @@ func Fetch(link string, arg ...*http.Cookie) Element {
 		Proxy: http.ProxyURL(proxyURL),
 	}
 
-	myClient := &http.Client{Timeout: 5 * time.Second, Transport: transport}
+	myClient := &http.Client{Timeout: time.Duration(timeout) * time.Second, Transport: transport}
 
 	req, err3 := http.NewRequest("GET", url.String(), nil)
 	toolkit.CheckErr(err3)
@@ -347,20 +347,24 @@ func Fetch(link string, arg ...*http.Cookie) Element {
 		// fmt.Println(link, " --  Error: \n", err4)
 		// fmt.Println("---------------------------------")
 
-		return Fetch(link, arg...)
+		return Fetch(link, timeout, arg...)
 	}
 	if resp.StatusCode != 200 || err4 != nil {
-		// fmt.Println(link, " -- ", resp.StatusCode, "  Error: \n", err2)
+		// fmt.Println(link, " -- ", resp.StatusCode, "  Error: \n", err4)
 		// fmt.Println("---------------------------------")
 
-		return Fetch(link, arg...)
+		return Fetch(link, timeout, arg...)
 	}
 
 	body, err3 := ioutil.ReadAll(resp.Body)
 	if err3 != nil {
 		// fmt.Println(link, "  网页编码转译失败", err3)
 		// fmt.Println("---------------------------------")
-		return Fetch(link, arg...)
+		return Fetch(link, timeout, arg...)
+	}
+
+	if len(string(body)) < 10 {
+		return Fetch(link, timeout, arg...)
 	}
 
 	defer resp.Body.Close()
