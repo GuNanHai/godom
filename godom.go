@@ -324,6 +324,52 @@ func (e Element) Attr(attr string) string {
 	return ""
 }
 
+//Get : 不使用代理
+func Get(link string, timeout int) Element {
+	var e Element
+
+	url, err2 := url.Parse(link)
+	toolkit.CheckErr(err2)
+
+	myClient := &http.Client{Timeout: time.Duration(timeout) * time.Second}
+
+	req, err3 := http.NewRequest("GET", url.String(), nil)
+	toolkit.CheckErr(err3)
+
+	req.Header.Set(USERAGENT, RandomUserAgentS())
+
+	resp, err4 := myClient.Do(req)
+	if resp == nil {
+		// fmt.Println(link, " --  Error: \n", err4)
+		// fmt.Println("---------------------------------")
+
+		return Get(link, timeout)
+	}
+	if resp.StatusCode != 200 || err4 != nil {
+		// fmt.Println(link, " -- ", resp.StatusCode, "  Error: \n", err4)
+		// fmt.Println("---------------------------------")
+
+		return Get(link, timeout)
+	}
+
+	body, err3 := ioutil.ReadAll(resp.Body)
+	if err3 != nil {
+		// fmt.Println(link, "  网页编码转译失败", err3)
+		// fmt.Println("---------------------------------")
+		return Get(link, timeout)
+	}
+
+	if len(string(body)) < 10 {
+		return Get(link, timeout)
+	}
+
+	defer resp.Body.Close()
+
+	e.Raw = string(body)
+
+	return e
+}
+
 // Fetch ： 访问网页
 func Fetch(link string, timeout int) Element {
 	var e Element
@@ -385,53 +431,6 @@ func Fetch(link string, timeout int) Element {
 
 	if len(string(body)) < 10 {
 		return Fetch(link, timeout)
-	}
-
-	defer resp.Body.Close()
-
-	e.Raw = string(body)
-
-	fmt.Println(proxy)
-	return e
-}
-
-//Get : 不使用代理
-func Get(link string, timeout int) Element {
-	var e Element
-
-	url, err2 := url.Parse(link)
-	toolkit.CheckErr(err2)
-
-	myClient := &http.Client{Timeout: time.Duration(timeout) * time.Second}
-
-	req, err3 := http.NewRequest("GET", url.String(), nil)
-	toolkit.CheckErr(err3)
-
-	req.Header.Set(USERAGENT, RandomUserAgentS())
-
-	resp, err4 := myClient.Do(req)
-	if resp == nil {
-		// fmt.Println(link, " --  Error: \n", err4)
-		// fmt.Println("---------------------------------")
-
-		return Get(link, timeout)
-	}
-	if resp.StatusCode != 200 || err4 != nil {
-		// fmt.Println(link, " -- ", resp.StatusCode, "  Error: \n", err4)
-		// fmt.Println("---------------------------------")
-
-		return Get(link, timeout)
-	}
-
-	body, err3 := ioutil.ReadAll(resp.Body)
-	if err3 != nil {
-		// fmt.Println(link, "  网页编码转译失败", err3)
-		// fmt.Println("---------------------------------")
-		return Get(link, timeout)
-	}
-
-	if len(string(body)) < 10 {
-		return Get(link, timeout)
 	}
 
 	defer resp.Body.Close()
