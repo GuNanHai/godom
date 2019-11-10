@@ -1,6 +1,7 @@
 package godom
 
 import (
+	"crypto/tls"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/GuNanHai/socks"
 	"github.com/GuNanHai/toolkit"
 )
 
@@ -323,17 +325,36 @@ func (e Element) Attr(attr string) string {
 }
 
 // Fetch ： 访问网页
-func Fetch(link string, timeout int, arg ...*http.Cookie) Element {
+func Fetch(link string, timeout int) Element {
+	var e Element
+
 	proxy := RandomProxy()
-	proxyURL, err := url.Parse(proxy)
-	toolkit.CheckErr(err)
+
+	var transport *http.Transport
+
+	if strings.Contains(proxy, "socks") {
+		dialSocksProxy := socks.Dial(proxy)
+		transport = &http.Transport{Dial: dialSocksProxy}
+	} else if strings.Contains(proxy, "https") {
+		// 因为无法走https的代理,所以暂时将https转换成http
+		temp := strings.Split(proxy, "://")
+		proxy = "http://" + temp[1]
+		proxyURL, err := url.Parse(proxy)
+		toolkit.CheckErr(err)
+		transport = &http.Transport{
+			Proxy:           http.ProxyURL(proxyURL),
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+	} else {
+		proxyURL, err := url.Parse(proxy)
+		toolkit.CheckErr(err)
+		transport = &http.Transport{
+			Proxy: http.ProxyURL(proxyURL),
+		}
+	}
 
 	url, err2 := url.Parse(link)
 	toolkit.CheckErr(err2)
-
-	transport := &http.Transport{
-		Proxy: http.ProxyURL(proxyURL),
-	}
 
 	myClient := &http.Client{Timeout: time.Duration(timeout) * time.Second, Transport: transport}
 
@@ -347,36 +368,37 @@ func Fetch(link string, timeout int, arg ...*http.Cookie) Element {
 		// fmt.Println(link, " --  Error: \n", err4)
 		// fmt.Println("---------------------------------")
 
-		return Fetch(link, timeout, arg...)
+		return Fetch(link, timeout)
 	}
 	if resp.StatusCode != 200 || err4 != nil {
 		// fmt.Println(link, " -- ", resp.StatusCode, "  Error: \n", err4)
 		// fmt.Println("---------------------------------")
-
-		return Fetch(link, timeout, arg...)
+		return Fetch(link, timeout)
 	}
 
 	body, err3 := ioutil.ReadAll(resp.Body)
 	if err3 != nil {
 		// fmt.Println(link, "  网页编码转译失败", err3)
 		// fmt.Println("---------------------------------")
-		return Fetch(link, timeout, arg...)
+		return Fetch(link, timeout)
 	}
 
 	if len(string(body)) < 10 {
-		return Fetch(link, timeout, arg...)
+		return Fetch(link, timeout)
 	}
 
 	defer resp.Body.Close()
 
-	var e Element
 	e.Raw = string(body)
 
+	fmt.Println(proxy)
 	return e
 }
 
 //Get : 不使用代理
-func Get(link string, timeout int, arg ...*http.Cookie) Element {
+func Get(link string, timeout int) Element {
+	var e Element
+
 	url, err2 := url.Parse(link)
 	toolkit.CheckErr(err2)
 
@@ -392,29 +414,28 @@ func Get(link string, timeout int, arg ...*http.Cookie) Element {
 		// fmt.Println(link, " --  Error: \n", err4)
 		// fmt.Println("---------------------------------")
 
-		return Fetch(link, timeout, arg...)
+		return Get(link, timeout)
 	}
 	if resp.StatusCode != 200 || err4 != nil {
 		// fmt.Println(link, " -- ", resp.StatusCode, "  Error: \n", err4)
 		// fmt.Println("---------------------------------")
 
-		return Fetch(link, timeout, arg...)
+		return Get(link, timeout)
 	}
 
 	body, err3 := ioutil.ReadAll(resp.Body)
 	if err3 != nil {
 		// fmt.Println(link, "  网页编码转译失败", err3)
 		// fmt.Println("---------------------------------")
-		return Fetch(link, timeout, arg...)
+		return Get(link, timeout)
 	}
 
 	if len(string(body)) < 10 {
-		return Fetch(link, timeout, arg...)
+		return Get(link, timeout)
 	}
 
 	defer resp.Body.Close()
 
-	var e Element
 	e.Raw = string(body)
 
 	return e
