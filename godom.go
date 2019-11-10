@@ -372,6 +372,7 @@ func Get(link string, timeout int) Element {
 
 // Fetch ： 访问网页
 func Fetch(link string, timeout int) Element {
+
 	var e Element
 
 	proxy := RandomProxy()
@@ -411,8 +412,8 @@ func Fetch(link string, timeout int) Element {
 
 	resp, err4 := myClient.Do(req)
 	if resp == nil {
-		// fmt.Println(link, " --  Error: \n", err4)
-		// fmt.Println("---------------------------------")
+		// fmt.Println(proxy, " --  Error: \n", err4)
+		fmt.Println("-------------AccessingFailed--------------------")
 
 		return Fetch(link, timeout)
 	}

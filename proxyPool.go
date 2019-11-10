@@ -18,7 +18,7 @@ func RandomProxy() string {
 }
 
 func fetchProxyList() []string {
-	proxyAPI := "https://guhaiproxy.tk/proxies.json"
+	proxyAPI := "https://guhaiproxy.tk/proxiesNative.json"
 	resp, err1 := http.Get(proxyAPI)
 	toolkit.CheckErr(err1)
 	defer resp.Body.Close()
